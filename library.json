@@ -1,6 +1,6 @@
 {
     "name": "BlumServoDrive",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Library to control Blum Servo Drives",
     "keywords": "blum",
     "homepage": "https://github.com/Port-Net/BlumServoDrive",

@@ -2,17 +2,14 @@
 #include <Preferences.h>
 
 #ifdef BLUM_DEBUG
-extern bool uart_avail;
+ #define Serialprint(...) Serial.print(__VA_ARGS__)
+ #define Serialprintln(...) Serial.println(__VA_ARGS__)
+ #define Serialprintf(...) Serial.printf(__VA_ARGS__)
 #else
- #define uart_avail false
+ #define Serialprint(...)
+ #define Serialprintln(...)
+ #define Serialprintf(...)
 #endif
-
-#define Serialprint(...) if(uart_avail) Serial.print(__VA_ARGS__)
-#define Serialprintln(...) if(uart_avail) Serial.println(__VA_ARGS__)
-#define Serialprintf(...) if(uart_avail) Serial.printf(__VA_ARGS__)
-
-#define LED_ON digitalWrite(15, LOW)
-#define LED_OFF digitalWrite(15, HIGH)
 
 #define SYNC_WAIT_TIMEOUT 20000
 
@@ -366,7 +363,6 @@ bool BlumServoDrive::sendDiscover(Payload &ackPayload) {
   _radio->flush_tx();
   _radio->setChannel(10);
   _radio->openReadingPipe(0, sync_cfg_addr);
-  LED_ON;
   Serialprintln(F("Sending discover"));
   return sendPacket(BLUM_C10_DISCOVER, ackPayload, 0);
 }
@@ -533,7 +529,6 @@ void BlumServoDrive::radioLoop() {
       }
       if((millis() - _last_state_transition) > SYNC_WAIT_TIMEOUT) {
         Serialprintln("Sync timeout");
-        LED_OFF;
         _radio->stopListening();
         _radio->flush_tx();
         _radio->flush_rx();
@@ -554,9 +549,11 @@ void BlumServoDrive::radioLoop() {
         Serialprint("got SYN Ack: ");
         printPayload(recPayload);
         handleSynAck(recPayload);
+        if(_event_callback) {
+          _event_callback(SYNC_END, findPeerIdx(_currentPeerID));
+        }
         got_packet = false;
         _state = BLUM_ACTIVE;
-        LED_OFF;
         _last_state_transition = ti;
       }
       break;
