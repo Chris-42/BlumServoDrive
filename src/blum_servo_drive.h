@@ -141,7 +141,7 @@ public:
   bool removePeerIdx(uint idx);
   bool toggleState(uint idx);
   bool pollState(uint idx, uint8_t &state);
-  uint8_t getState(uint idx, uint8_t &state);
+  uint8_t getState(uint idx.);
   bool startSync();
   void setCallback(void (*callback)(event_t event, int peer_idx));
 private:

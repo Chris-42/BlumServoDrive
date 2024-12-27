@@ -35,14 +35,14 @@ bool BlumServoDrive::begin(uint8_t level) {
 
   loadConfig();
 
-
   _sequence = 1;
   _state = BLUM_ACTIVE;
   _last_state_transition = millis();
   xTaskCreatePinnedToCore(this->radioLoopTask, "BlumLoop", 4000, (void*)this, 5, &_loophandle, ARDUINO_RUNNING_CORE);
 
   for(int i = 0; i < _peers.size(); ++i) {
-    _peers.at(i).pollState();
+    uint8_t state;
+    pollState(i, state);
   }
   
   return true;
@@ -432,7 +432,7 @@ int BlumServoDrive::findPeerIdx(uint32_t peerID) {
   if(p == _peers.end()) {
     return -1;
   }
-  std::distance(_peers.begin(), p);
+  return std::distance(_peers.begin(), p);
 }
 
 Peer* BlumServoDrive::findPeer(uint32_t peerID) {
