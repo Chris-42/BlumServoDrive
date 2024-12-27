@@ -1,7 +1,11 @@
 #include "blum_servo_drive.h"
 #include <Preferences.h>
 
+#ifdef BLUM_DEBUG
 extern bool uart_avail;
+#else
+ #define uart_avail false
+#endif
 
 #define Serialprint(...) if(uart_avail) Serial.print(__VA_ARGS__)
 #define Serialprintln(...) if(uart_avail) Serial.println(__VA_ARGS__)
