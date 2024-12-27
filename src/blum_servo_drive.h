@@ -6,7 +6,46 @@
 
 #define SEND_INTERVAL 500
 
-class Peer;
+class Peer {
+  private:
+    String _name;
+    uint8_t _devID;
+    uint32_t _id;
+    uint8_t _state;
+  public:
+    Peer(uint32_t id, String name = "") {
+      _id = id;
+      _name = name;
+      _devID = 1;
+      _state = 0;
+    }
+
+    ~Peer() {}
+
+    uint32_t getID() const {
+      return _id;
+    }
+    
+    void setID(uint32_t id) {
+      _id = id;
+    }
+    
+    String getName() const {
+      return _name;
+    }
+    
+    void setName(String name) {
+      _name = name;
+    }
+
+    uint8_t getState() {
+      return _state;
+    }
+
+    void setState(uint8_t state) {
+      _state = state;
+    }
+};
 
 class BlumServoDrive {
 private:
@@ -94,15 +133,15 @@ public:
   bool loadConfig();
   int getPeerCount();
   uint8_t getState() {return _state;};
-  uint32_t getPeerID(int idx);
-  String getPeerName(int idx);
-  void setPeerName(int idx, String name);
-  bool sendMove(int idx, bool open);
-  bool sendSyncIdentify(int idx);
-  bool removePeerIdx(int idx);
-  bool toggleState(int idx);
-  bool pollState(int idx, uint8_t &state);
-  uint8_t getState(int idx, uint8_t &state);
+  uint32_t getPeerID(uint idx);
+  String getPeerName(uint idx);
+  void setPeerName(uint idx, String name);
+  bool sendMove(uint idx, bool open);
+  bool sendSyncIdentify(uint idx);
+  bool removePeerIdx(uint idx);
+  bool toggleState(uint idx);
+  bool pollState(uint idx, uint8_t &state);
+  uint8_t getState(uint idx, uint8_t &state);
   bool startSync();
   void setCallback(void (*callback)(event_t event, int peer_idx));
 private:

@@ -12,47 +12,6 @@ extern bool uart_avail;
 
 #define SYNC_WAIT_TIMEOUT 20000
 
-class Peer {
-  private:
-    String _name;
-    uint8_t _devID;
-    uint32_t _id;
-    uint8_t _state;
-  public:
-    Peer(uint32_t id, String name = "") {
-      _id = id;
-      _name = name;
-      _devID = 1;
-      _state = 0;
-    }
-
-    ~Peer() {}
-
-    uint32_t getID() const {
-      return _id;
-    }
-    
-    void setID(uint32_t id) {
-      _id = id;
-    }
-    
-    String getName() const {
-      return _name;
-    }
-    
-    void setName(String name) {
-      _name = name;
-    }
-
-    uint8_t getState() {
-      return _state;
-    }
-
-    void setState(uint8_t state) {
-      _state = state;
-    }
-};
-
 BlumServoDrive::BlumServoDrive(RF24* radio, uint32_t id) {
   _radio = radio;
   _id = id;
@@ -284,28 +243,28 @@ int BlumServoDrive::getPeerCount(){
   return _peers.size();
 }
 
-uint32_t BlumServoDrive::getPeerID(int idx) {
+uint32_t BlumServoDrive::getPeerID(uint idx) {
   if(idx > _peers.size()) {
     return 0;
   }
   return _peers.at(idx).getID();
 }
 
-void BlumServoDrive::setPeerName(int idx, String name) {
+void BlumServoDrive::setPeerName(uint idx, String name) {
   if(idx >= _peers.size()) {
     return;
   }
   _peers.at(idx).setName(name);
 }
 
-String BlumServoDrive::getPeerName(int idx) {
+String BlumServoDrive::getPeerName(uint idx) {
   if(idx >= _peers.size()) {
     return String("out of range");
   }
   return _peers.at(idx).getName();
 }
 
-bool BlumServoDrive::removePeerIdx(int idx) {
+bool BlumServoDrive::removePeerIdx(uint idx) {
   if(idx >= _peers.size()) {
     return false;
   }
@@ -316,7 +275,7 @@ bool BlumServoDrive::removePeerIdx(int idx) {
   return true;
 }
 
-bool BlumServoDrive::sendSyncIdentify(int idx) {
+bool BlumServoDrive::sendSyncIdentify(uint idx) {
   if(idx >= _peers.size()) {
     return false;
   }
@@ -325,7 +284,7 @@ bool BlumServoDrive::sendSyncIdentify(int idx) {
   return sendPacket(BLUM_C4_SYNC_BUTTON, ackPayload, _peers.at(idx).getID(), 2);
 }
 
-bool BlumServoDrive::pollState(int idx, uint8_t &state) {
+bool BlumServoDrive::pollState(uint idx, uint8_t &state) {
   if(idx >= _peers.size()) {
     return false;
   }
@@ -339,7 +298,7 @@ bool BlumServoDrive::pollState(int idx, uint8_t &state) {
   return false;
 }
 
-uint8_t BlumServoDrive::getState(int idx) {
+uint8_t BlumServoDrive::getState(uint idx) {
   if(idx >= _peers.size()) {
     return 0;
   }
