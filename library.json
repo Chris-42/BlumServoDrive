@@ -1,0 +1,43 @@
+{
+    "name": "BlumServoDrive",
+    "version": "0.2.0",
+    "description": "Library to control Blum Servo Drives",
+    "keywords": "blum",
+    "homepage": "https://github.com/Port-Net/BlumServoDrive",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/Port-Net/BlumServoDrive.git"
+    },
+    "authors": [
+      {
+        "name": "Christian Port",
+        "maintainer": true
+      }
+    ],
+    "license": "LGPL-3.0",
+    "frameworks": "arduino",
+    "platforms": [
+      "espressif32"
+    ],
+    "dependencies": [
+      {
+        "owner": "nrf24",
+        "name": "RF24",
+        "version": "^1.4.9",
+        "platforms": "espressif32"
+      }
+    ],
+    "export": {
+      "include": [
+        "examples",
+        "src",
+        "library.json",
+        "library.properties",
+        "LICENSE",
+        "README.md"
+      ]
+    },
+    "build": {
+      "libCompatMode": "strict"
+    }
+  }
