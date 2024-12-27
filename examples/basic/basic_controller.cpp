@@ -20,7 +20,7 @@ void setup() {
   // initialize the transceiver on the SPI bus
   bool radio_ok = radio.begin(&SPI);
   if(radio_ok) {
-      Serial.println("radio ok");
+      Serial.println(F("radio ok"));
   } else {
     Serial.println(F("radio hardware is not responding!!"));
     while(1);
@@ -33,7 +33,7 @@ void setup() {
   button.interval(5); 
   button.setPressedState(LOW); 
   if(blum.getPeerCount()) {
-    Serial.printl(F("Door 0 state is %d", blum.getState(0)))
+    Serial.printf(F("Door 0 state is %d\r\n"), blum.getState(0));
   }
 }
 
@@ -45,7 +45,7 @@ void loop() {
     } else if(button.previousDuration() > 1000) {
       blum.sendSyncIdentify(0);
     } else {
-      blum.toggle(0);
+      blum.toggleState(0);
     }
   }
 }
