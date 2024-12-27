@@ -42,7 +42,7 @@ bool BlumServoDrive::begin(uint8_t level) {
   xTaskCreatePinnedToCore(this->radioLoopTask, "BlumLoop", 4000, (void*)this, 5, &_loophandle, ARDUINO_RUNNING_CORE);
 
   for(int i = 0; i < _peers.size(); ++i) {
-    peerIDs[i] = _peers.at(i).pollState();
+    _peers.at(i).pollState();
   }
   
   return true;
