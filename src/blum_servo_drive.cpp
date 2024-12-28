@@ -639,6 +639,7 @@ void BlumServoDrive::radioLoop() {
           Serialprintln(peerID, HEX);
           Serialprint(F(" to: "));
           Serialprintln(recPayload.data[12], HEX);
+          findPeer(peerID)->setState(recPayload.data[12]);
           if(_event_callback) {
             _event_callback(recPayload.data[12] == 01 ? OPEN : CLOSE, findPeerIdx(peerID));
           }
