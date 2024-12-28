@@ -533,22 +533,6 @@ void BlumServoDrive::radioLoop() {
         last_send = ti;
         _last_state_transition = millis();
       }
-      if((millis() - _last_state_transition) > SYNC_WAIT_TIMEOUT) {
-        Serialprintln("Sync timeout");
-        _radio->stopListening();
-        _radio->flush_tx();
-        _radio->flush_rx();
-        _radio->setChannel(4);
-        _radio->closeReadingPipe(0);
-        _radio->openReadingPipe(1, addressFromID(_id, 1));
-        _radio->openReadingPipe(2, 0x02);
-        _radio->startListening();
-        _state = BLUM_ACTIVE;
-        _last_state_transition = millis();
-        if(_event_callback) {
-          _event_callback(SYNC_END, -1);
-        }
-      }
       break;
     case BLUM_SYNC_WAIT_REC_ACK:
       if(got_packet) {
@@ -675,6 +659,23 @@ void BlumServoDrive::radioLoop() {
     _last_state_transition = millis();
     last_state = _state;
   }
+  if((_state != BLUM_ACTIVE) && ((millis() - _last_state_transition) > SYNC_WAIT_TIMEOUT)) {
+    Serialprintln("Sync timeout");
+    _radio->stopListening();
+    _radio->flush_tx();
+    _radio->flush_rx();
+    _radio->setChannel(4);
+    _radio->closeReadingPipe(0);
+    _radio->openReadingPipe(1, addressFromID(_id, 1));
+    _radio->openReadingPipe(2, 0x02);
+    _radio->startListening();
+    _state = BLUM_ACTIVE;
+    _last_state_transition = millis();
+    if(_event_callback) {
+      _event_callback(SYNC_END, -1);
+    }
+  }
+
 }
 
 void BlumServoDrive::radioLoopTask(void * parameters) {
