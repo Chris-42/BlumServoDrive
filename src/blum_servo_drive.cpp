@@ -452,6 +452,9 @@ void BlumServoDrive::addPeer(uint32_t peerID) {
     Peer* p = new Peer(peerID);
     _peers.push_back(*p);
     storeConfig();
+    if(_event_callback) {
+      _event_callback(NEWPEER, findPeerIdx(peerID));
+    }
   }
 }
 
@@ -459,6 +462,9 @@ void BlumServoDrive::removePeer(uint32_t peerID) {
   if(findPeer(peerID)) {
     std::erase_if(_peers, [&peerID] (const Peer& p) { return p.getID() == peerID; });
     storeConfig();
+    if(_event_callback) {
+      _event_callback(UNLINK, findPeerIdx(peerID));
+    }
   } else {
     Serialprintln(F("Peer not found"));
   }
@@ -648,9 +654,6 @@ void BlumServoDrive::radioLoop() {
         } else if (recPayload.data[5] == 0x42) {
           Serialprint("erasing peer");
           Serialprintln(peerID, HEX);
-          if(_event_callback) {
-            _event_callback(UNLINK, findPeerIdx(peerID));
-          }
           removePeer(peerID);
           got_packet = false;
         }

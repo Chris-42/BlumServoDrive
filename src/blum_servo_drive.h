@@ -125,7 +125,7 @@ private:
   uint8_t _retries;
   int _state;
 public:
-  enum event_t {SYNC_END, SYNC_IDENTIFY, OPEN, CLOSE, UNLINK};
+  enum event_t {SYNC_END, SYNC_IDENTIFY, OPEN, CLOSE, NEWPEER, UNLINK};
   BlumServoDrive(RF24* radio, uint32_t id = 0xBAABCE);
   bool begin(uint8_t level = RF24_PA_MAX);
   bool storeConfig();
