@@ -347,41 +347,20 @@ bool BlumServoDrive::toggleState(uint idx) {
 }
 
 bool BlumServoDrive::startSync() {
+  _radio->stopListening();
+  _radio->flush_rx();
+  _radio->flush_tx();
+  _radio->setChannel(10);
+  _radio->openReadingPipe(0, sync_cfg_addr);
   _state = BLUM_SYNC;
   _retries = 5;
+  setAutoAckPayload(BLUM_C10_DISCOVER_ACK, 0, 0);
   _last_state_transition = millis();
   return true;
 }
 
 void BlumServoDrive::setCallback(void (*callback)(event_t event, int peer_idx)) {
   _event_callback = callback;
-}
-
-bool BlumServoDrive::sendDiscover(Payload &ackPayload) {
-  _radio->stopListening();
-  _radio->flush_rx();
-  _radio->flush_tx();
-  _radio->setChannel(10);
-  _radio->openReadingPipe(0, sync_cfg_addr);
-  Serialprintln(F("Sending discover"));
-  return sendPacket(BLUM_C10_DISCOVER, ackPayload, 0);
-}
-
-bool BlumServoDrive::handleDiscoverAck(Payload &ackPayload) {
-  Serialprint(F("got ack "));
-  if(!ackPayload.len) {
-    Serialprintln(F("without payload, retry"));
-    return false;
-  }
-  Serialprintln(F("with payload"));
-  if((ackPayload.len < 11) || (ackPayload.data[5] != 0x82)) {
-    Serialprintln(F("no 82 in payload, retry"));
-    return false;
-  }
-  uint32_t peerID = (uint32_t)ackPayload.data[0]<<16 | (uint32_t)ackPayload.data[1]<<8 | ackPayload.data[2];
-  addPeer(peerID);
-  _currentPeerID = peerID;
-  return true;
 }
 
 void BlumServoDrive::handleDiscover(Payload &recPayload) {
@@ -489,7 +468,8 @@ void BlumServoDrive::radioLoop() {
     case BLUM_SYNC:
       if((ti - last_send) > SEND_INTERVAL) {
         last_send = ti;
-        if(sendDiscover(ack_payload)) {
+        Serialprintln(F("Sending discover"));
+        if(sendPacket(BLUM_C10_DISCOVER, ack_payload, 0)) {
           Serialprint(F("got ack "));
           if(ack_payload.len) {
             Serialprintln(F("with payload"));
@@ -497,7 +477,7 @@ void BlumServoDrive::radioLoop() {
               Serialprintln(F(" 82 in payload, adding peer"));
               uint32_t peerID = (uint32_t)ack_payload.data[0]<<16 | (uint32_t)ack_payload.data[1]<<8 | ack_payload.data[2];
               addPeer(peerID);
-              _state = BLUM_SYNC_WAIT_SEND_ACK;
+              _state = BLUM_SYNC_SEND_ACK;
               _last_state_transition = ti;
             } else {
               Serialprintln(F("no 82 in payload, listen"));
@@ -523,12 +503,13 @@ void BlumServoDrive::radioLoop() {
           _retries--;
         }
       }
-      break;
+      //break;
     case BLUM_SYNC_WAIT_DISCOVER:
       if(got_packet && (_pipe == 0)) {
         handleDiscover(recPayload);
         got_packet = false;
-        _state = BLUM_SYNC_WAIT_REC_ACK;
+        _state = BLUM_SYNC_SEND_ACK;
+//        _state = BLUM_SYNC_WAIT_REC_ACK;
         _retries = 5;
         last_send = ti;
         _last_state_transition = millis();
@@ -547,7 +528,7 @@ void BlumServoDrive::radioLoop() {
         _last_state_transition = ti;
       }
       break;
-    case BLUM_SYNC_WAIT_SEND_ACK:
+    case BLUM_SYNC_SEND_ACK:
       if((ti - last_send) > SEND_INTERVAL) {
         last_send = ti;
         if(_retries) {

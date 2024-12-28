@@ -65,8 +65,7 @@ private:
     BLUM_ACTIVE,
     BLUM_SYNC,
     BLUM_SYNC_WAIT_DISCOVER,
-    BLUM_SYNC_WAIT_ANNOUNCE,
-    BLUM_SYNC_WAIT_SEND_ACK,
+    BLUM_SYNC_SEND_ACK,
     BLUM_SYNC_WAIT_REC_ACK,
     BLUM_MOVE,
     BLUM_MOVE_WAIT_ACK
@@ -99,8 +98,6 @@ private:
   bool sendPacket(PayloadTypes type, Payload &ackPayload, uint32_t peerID, uint8_t pipe = 2);
   bool sendPacket(Payload &sendPayload, Payload &ackPayload, uint64_t address);
   void setAutoAckPayload(PayloadTypes type, uint32_t peerID, uint8_t pipe = 2);
-  bool sendDiscover(Payload &ackPayload);
-  bool handleDiscoverAck(Payload &ackPayload);
   void handleDiscover(Payload &recPayload);
   bool sendSynAck();
   void handleSynAck(Payload &recPayload);
