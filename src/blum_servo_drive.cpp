@@ -460,11 +460,11 @@ void BlumServoDrive::addPeer(uint32_t peerID) {
 
 void BlumServoDrive::removePeer(uint32_t peerID) {
   if(findPeer(peerID)) {
-    std::erase_if(_peers, [&peerID] (const Peer& p) { return p.getID() == peerID; });
-    storeConfig();
     if(_event_callback) {
       _event_callback(UNLINK, findPeerIdx(peerID));
     }
+    std::erase_if(_peers, [&peerID] (const Peer& p) { return p.getID() == peerID; });
+    storeConfig();
   } else {
     Serialprintln(F("Peer not found"));
   }
@@ -653,12 +653,6 @@ void BlumServoDrive::radioLoop() {
     printPayload(recPayload);
   }
 
-  static int last_state = 0;
-  if(_state != last_state) {
-    Serialprintf("state change %d -> %d ch:%d\r\n", last_state, _state, _radio->getChannel());
-    _last_state_transition = millis();
-    last_state = _state;
-  }
   if((_state != BLUM_ACTIVE) && ((millis() - _last_state_transition) > SYNC_WAIT_TIMEOUT)) {
     Serialprintln("Sync timeout");
     _radio->stopListening();
@@ -676,6 +670,12 @@ void BlumServoDrive::radioLoop() {
     }
   }
 
+  static int last_state = 0;
+  if(_state != last_state) {
+    Serialprintf("state change %d -> %d ch:%d\r\n", last_state, _state, _radio->getChannel());
+    _last_state_transition = millis();
+    last_state = _state;
+  }
 }
 
 void BlumServoDrive::radioLoopTask(void * parameters) {
