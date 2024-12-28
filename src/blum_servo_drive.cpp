@@ -43,7 +43,7 @@ bool BlumServoDrive::begin(uint8_t level) {
 
   for(int i = 0; i < _peers.size(); ++i) {
     uint8_t state;
-    pollState(i, state);
+    pollPeerState(i, state);
   }
   
   return true;
@@ -285,7 +285,7 @@ bool BlumServoDrive::sendSyncIdentify(uint idx) {
   return sendPacket(BLUM_C4_SYNC_BUTTON, ackPayload, _peers.at(idx).getID(), 2);
 }
 
-bool BlumServoDrive::pollState(uint idx, uint8_t &state) {
+bool BlumServoDrive::pollPeerState(uint idx, uint8_t &state) {
   if(idx >= _peers.size()) {
     return false;
   }
@@ -299,7 +299,7 @@ bool BlumServoDrive::pollState(uint idx, uint8_t &state) {
   return false;
 }
 
-uint8_t BlumServoDrive::getState(uint idx) {
+uint8_t BlumServoDrive::getPeerState(uint idx) {
   if(idx >= _peers.size()) {
     return 0;
   }

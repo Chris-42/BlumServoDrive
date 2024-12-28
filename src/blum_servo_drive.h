@@ -108,7 +108,6 @@ private:
   void addPeer(uint32_t peerID);
   void removePeer(uint32_t peerID);
   Peer* findPeer(uint32_t peerID);
-  int findPeerIdx(uint32_t peerID);
   static void radioLoopTask(void * parameters);
   void radioLoop();
   RF24* _radio;
@@ -132,16 +131,17 @@ public:
   bool storeConfig();
   bool loadConfig();
   int getPeerCount();
-  uint8_t getState() {return _state;};
+  int findPeerIdx(uint32_t peerID);
   uint32_t getPeerID(uint idx);
+  uint8_t getState() {return _state;};
   String getPeerName(uint idx);
   void setPeerName(uint idx, String name);
   bool sendMove(uint idx, bool open);
   bool sendSyncIdentify(uint idx);
   bool removePeerIdx(uint idx);
   bool toggleState(uint idx);
-  bool pollState(uint idx, uint8_t &state);
-  uint8_t getState(uint idx);
+  bool pollPeerState(uint idx, uint8_t &state);
+  uint8_t getPeerState(uint idx);
   bool startSync();
   void setCallback(void (*callback)(event_t event, int peer_idx));
 private:
