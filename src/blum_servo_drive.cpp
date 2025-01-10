@@ -41,11 +41,6 @@ bool BlumServoDrive::begin(uint8_t level) {
   _last_state_transition = millis();
   xTaskCreatePinnedToCore(this->radioLoopTask, "BlumLoop", 4000, (void*)this, 5, &_loophandle, ARDUINO_RUNNING_CORE);
 
-  for(int i = 0; i < _peers.size(); ++i) {
-    uint8_t state;
-    pollPeerState(i, state);
-  }
-  
   return true;
 }
 
@@ -187,18 +182,26 @@ bool BlumServoDrive::loadConfig() {
   Preferences prefs;
   if(prefs.begin("config")) {
     size_t len = prefs.getBytesLength("PeerIDs");
+    size_t states_len = prefs.getBytesLength("PeerStates");
+    uint8_t peer_states[len];
+    if(states_len > 0) {
+      prefs.getBytes("PeerStates", peer_states, len);
+    }
     if(len > 0) {
-      uint32_t peerids[len/4];
-      prefs.getBytes("PeerIDs", peerids, len);
+      uint32_t peer_ids[len/4];
+      prefs.getBytes("PeerIDs", peer_ids, len);
       for(int i = 0; i < len/4; ++i) {
+        Peer* peer = new Peer(peer_ids[i]);
         char n[16];
-        sprintf(n, "name_%04X", peerids[i]);
+        sprintf(n, "name_%04X", peer_ids[i]);
         String name = prefs.getString(n);
-        if(name.isEmpty()) {
-          _peers.push_back(Peer(peerids[i]));
-        } else {
-          _peers.push_back(Peer(peerids[i], name));
+        if(!name.isEmpty()) {
+          peer->setName(name);
         }
+        if(i < states_len) {
+          peer->setState(peer_states[i]);
+        }
+        _peers.push_back(peer);
       }
     }
     prefs.end();
@@ -215,19 +218,26 @@ bool BlumServoDrive::storeConfig() {
     return false;
   }  
   prefs.clear();
-  uint32_t peerIDs[len];
+  uint32_t peer_ids[len];
+  uint8_t peer_states[len];
   for(int i = 0; i < _peers.size(); ++i) {
-    peerIDs[i] = _peers.at(i).getID();
+    peer_ids[i] = _peers.at(i)->getID();
+    peer_states[i] = _peers.at(i)->getState();
   }
-  if(prefs.putBytes("PeerIDs", peerIDs, len*4) != len*4) {
+  if(prefs.putBytes("PeerIDs", peer_ids, len*4) != len*4) {
+    prefs.clear();
+    prefs.end();
+    return false;
+  }
+  if(prefs.putBytes("PeerStates", peer_states, len) != len) {
     prefs.clear();
     prefs.end();
     return false;
   }
   for(int i = 0; i < len; ++i) {
     char n[16];
-    sprintf(n, "name_%04X", peerIDs[i]);
-    String name = _peers.at(i).getName();
+    sprintf(n, "name_%04X", peer_ids[i]);
+    String name = _peers.at(i)->getName();
     if(!name.isEmpty()) {
       if(!prefs.putString(n, name)) {
         prefs.clear();
@@ -248,21 +258,21 @@ uint32_t BlumServoDrive::getPeerID(uint idx) {
   if(idx > _peers.size()) {
     return 0;
   }
-  return _peers.at(idx).getID();
+  return _peers.at(idx)->getID();
 }
 
 void BlumServoDrive::setPeerName(uint idx, String name) {
   if(idx >= _peers.size()) {
     return;
   }
-  _peers.at(idx).setName(name);
+  _peers.at(idx)->setName(name);
 }
 
 String BlumServoDrive::getPeerName(uint idx) {
   if(idx >= _peers.size()) {
     return String("out of range");
   }
-  return _peers.at(idx).getName();
+  return _peers.at(idx)->getName();
 }
 
 bool BlumServoDrive::removePeerIdx(uint idx) {
@@ -270,9 +280,9 @@ bool BlumServoDrive::removePeerIdx(uint idx) {
     return false;
   }
   Payload ackPayload;
-  Serialprintf(F("send reset to %06X.2"),  _peers.at(idx).getID());
-  sendPacket(BLUM_C4_RESET, ackPayload, _peers.at(idx).getID(), 2);
-  removePeer(_peers.at(idx).getID());
+  Serialprintf(F("send reset to %06X.2"),  _peers.at(idx)->getID());
+  sendPacket(BLUM_C4_RESET, ackPayload, _peers.at(idx)->getID(), 2);
+  removePeer(_peers.at(idx)->getID());
   return true;
 }
 
@@ -281,29 +291,15 @@ bool BlumServoDrive::sendSyncIdentify(uint idx) {
     return false;
   }
   Payload ackPayload;
-  Serialprintf(F("send sync identify to %06X.2"),  _peers.at(idx).getID());
-  return sendPacket(BLUM_C4_SYNC_BUTTON, ackPayload, _peers.at(idx).getID(), 2);
-}
-
-bool BlumServoDrive::pollPeerState(uint idx, uint8_t &state) {
-  if(idx >= _peers.size()) {
-    return false;
-  }
-  Payload ackPayload;
-  Serialprintf(F("send power on to %06X.2"),  _peers.at(idx).getID());
-  bool success = sendPacket(BLUM_C4_POWERON, ackPayload, _peers.at(idx).getID(), 2);
-  if(success && ackPayload.len) {
-    _peers.at(idx).setState(ackPayload.data[0]);
-    return true;
-  }
-  return false;
+  Serialprintf(F("send sync identify to %06X.2"),  _peers.at(idx)->getID());
+  return sendPacket(BLUM_C4_SYNC_BUTTON, ackPayload, _peers.at(idx)->getID(), 2);
 }
 
 uint8_t BlumServoDrive::getPeerState(uint idx) {
   if(idx >= _peers.size()) {
     return 0;
   }
-  return _peers.at(idx).getState();
+  return _peers.at(idx)->getState();
 }
 
 bool BlumServoDrive::sendMovePos() {
@@ -325,7 +321,7 @@ bool BlumServoDrive::sendMove(uint idx, bool open) {
   if(idx >= _peers.size()) {
     return false;
   }
-  _currentPeerID = _peers.at(idx).getID();
+  _currentPeerID = _peers.at(idx)->getID();
   _requested_open = open;
   _retries = 5;
   _state = BLUM_MOVE;
@@ -337,7 +333,7 @@ bool BlumServoDrive::toggleState(uint idx) {
   if(idx >= _peers.size()) {
     return false;
   }
-  uint8_t state = _peers.at(idx).getState();
+  uint8_t state = _peers.at(idx)->getState();
   if(state == 0x01) {
     return sendMove(idx, true);
   } else if(state == 0x10) {
@@ -407,7 +403,7 @@ void BlumServoDrive::handleSynAck(Payload &recPayload) {
 }
 
 int BlumServoDrive::findPeerIdx(uint32_t peerID) {
-  auto p = std::find_if(_peers.begin(), _peers.end(), [&peerID] (const Peer& p) { return p.getID() == peerID; });
+  auto p = std::find_if(_peers.begin(), _peers.end(), [&peerID] (const Peer* p) { return p->getID() == peerID; });
   if(p == _peers.end()) {
     return -1;
   }
@@ -419,7 +415,7 @@ Peer* BlumServoDrive::findPeer(uint32_t peerID) {
   if(idx < 0) {
     return nullptr;
   }
-  return &(_peers.at(idx));
+  return _peers.at(idx);
 }
 
 void BlumServoDrive::addPeer(uint32_t peerID) {
@@ -429,7 +425,7 @@ void BlumServoDrive::addPeer(uint32_t peerID) {
     Serialprint(F("new Peer "));
     Serialprintln(peerID, HEX);
     Peer* p = new Peer(peerID);
-    _peers.push_back(*p);
+    _peers.push_back(p);
     storeConfig();
     if(_event_callback) {
       _event_callback(NEWPEER, findPeerIdx(peerID));
@@ -442,7 +438,7 @@ void BlumServoDrive::removePeer(uint32_t peerID) {
     if(_event_callback) {
       _event_callback(UNLINK, findPeerIdx(peerID));
     }
-    std::erase_if(_peers, [&peerID] (const Peer& p) { return p.getID() == peerID; });
+    std::erase_if(_peers, [&peerID] (const Peer* p) { return p->getID() == peerID; });
     storeConfig();
   } else {
     Serialprintln(F("Peer not found"));

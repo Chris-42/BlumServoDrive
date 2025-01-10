@@ -109,7 +109,7 @@ private:
   void radioLoop();
   RF24* _radio;
   uint32_t _id;
-  std::vector<Peer> _peers;
+  std::vector<Peer*> _peers;
   TaskHandle_t _loophandle;
   uint32_t _last_state_transition;
   uint32_t _next_ack_send;
@@ -137,7 +137,6 @@ public:
   bool sendSyncIdentify(uint idx);
   bool removePeerIdx(uint idx);
   bool toggleState(uint idx);
-  bool pollPeerState(uint idx, uint8_t &state);
   uint8_t getPeerState(uint idx);
   bool startSync();
   void setCallback(void (*callback)(event_t event, int peer_idx));

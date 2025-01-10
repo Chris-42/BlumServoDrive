@@ -40,7 +40,7 @@ void setup() {
   button.interval(5); 
   button.setPressedState(LOW); 
   if(blum.getPeerCount()) {
-    Serial.printf(F("Door 0 state is %d\r\n"), blum.getState(0));
+    Serial.printf(F("Door 0 state is %d\r\n"), blum.getPeerState(0));
   }
 }
 
